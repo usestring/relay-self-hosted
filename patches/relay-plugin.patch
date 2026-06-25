@@ -1,0 +1,16 @@
+diff --git a/esbuild.config.mjs b/esbuild.config.mjs
+index 1c2ffb4..f338fa8 100644
+--- a/esbuild.config.mjs
++++ b/esbuild.config.mjs
+@@ -37,8 +37,9 @@ const positionalArgs = process.argv.slice(3).filter((a) => !a.startsWith("--"));
+ const out = positionalArgs[0] || ".";
+ const tld = staging ? "dev" : "md";
+ 
+-const apiUrl = `https://api.system3.${tld}`;
+-const authUrl = `https://auth.system3.${tld}`;
++// Self-hosted: point at local token microservice. Override via RELAY_API_URL / RELAY_AUTH_URL env vars.
++const apiUrl = process.env.RELAY_API_URL || "http://localhost:3000";
++const authUrl = process.env.RELAY_AUTH_URL || "http://localhost:3000";
+ const healthUrl = `${apiUrl}/health?version=${gitTag}`;
+ console.log("git tag:", gitTag);
+ console.log("health URL", healthUrl);

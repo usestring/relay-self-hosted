@@ -1,0 +1,48 @@
+services:
+  relay-server:
+    image: docker.system3.md/relay-server
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./relay.toml:/app/relay.toml
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  token-service:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install --silent && node src/index.js"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./token-service:/app
+      - ./relay.toml:/relay.toml
+    environment:
+      - RELAY_TOML=/relay.toml
+      - RELAY_URL=http://relay-server:8080
+      - POCKETBASE_URL=http://pocketbase:8090
+      - PORT=3000
+    depends_on:
+      relay-server:
+        condition: service_healthy
+      pocketbase:
+        condition: service_healthy
+    restart: unless-stopped
+
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:latest
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./pb_data:/pb/pb_data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

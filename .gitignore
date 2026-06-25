@@ -1,0 +1,11 @@
+# Live signing key — generate your own with keygen.sh
+relay.toml
+
+# Runtime data
+data/
+
+# Plugin clone — apply patches/relay-plugin.patch to your own clone instead
+relay-plugin/
+
+# Node deps
+token-service/node_modules/

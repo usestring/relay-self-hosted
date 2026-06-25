@@ -1,0 +1,23 @@
+# relay.toml — self-hosted Relay Server config (no relay.md dependency)
+#
+# Generate your own key: ./keygen.sh
+# Then: cp relay.toml.example relay.toml
+# and paste your generated key into the private_key field below.
+
+[server]
+url = "http://localhost:8080"
+host = "0.0.0.0"
+port = 8080
+
+[logging]
+level = "info"
+format = "pretty"
+
+# Your own signing key — 32 random bytes, base64url-encoded (no relay.md keys)
+[[auth]]
+key_id = "self-hosted-2026-06-25"
+private_key = "REPLACE_WITH_OUTPUT_OF_KEYGEN_SH"
+
+[store]
+type = "filesystem"
+path = "/app/data"
