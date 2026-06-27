@@ -35,11 +35,17 @@ services:
     restart: unless-stopped
 
   pocketbase:
-    image: ghcr.io/muchobien/pocketbase:latest
+    # Pinned: the control-plane migrations + self-host hook target the
+    # PocketBase v0.22.x JS API (Dao/Collection/SchemaField, $app.dao()).
+    # v0.23+ rewrote that API, so do not float to :latest without porting
+    # pb_migrations/ and pb_hooks/ first.
+    image: ghcr.io/muchobien/pocketbase:0.22.21
     ports:
       - "8090:8090"
     volumes:
       - ./pb_data:/pb/pb_data
+      - ./pb_migrations:/pb/pb_migrations
+      - ./pb_hooks:/pb/pb_hooks
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8090/api/health"]
