@@ -287,13 +287,17 @@ migrate(
 		);
 
 		// --- code_exchange (LoginManager.poll) -----------------------------
-		// Polled by getOne(state.slice(0,15)); populated server-side by the OAuth
-		// redirect handler. See README gap: the webview/redirect flow that writes
-		// these rows is not yet reimplemented for self-host.
+		// Polled by getOne(state.slice(0,15)) during the *manual* OAuth code flow,
+		// and populated server-side by pb_hooks/oauth2_code_exchange.pb.js (the
+		// /api/oauth2-redirect middleware). poll() runs BEFORE the user is authed
+		// (it is the login handshake), so viewRule MUST be public — with view:
+		// AUTHED the anonymous getOne is forbidden, poll()'s .catch swallows it,
+		// and login times out. The 15-char id is the high-entropy OAuth-state
+		// slice, so view-by-id is the capability check; listRule stays null so
+		// rows can't be enumerated. Rows are written via DAO (bypasses API rules),
+		// so create/update/delete stay admin-only.
 		make("codeexchange000", "code_exchange", [TEXT("code")], {
-			list: AUTHED,
-			view: AUTHED,
-			create: AUTHED,
+			view: "",
 		});
 
 		// --- seed the three role records the plugin checks by name ---------

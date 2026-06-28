@@ -28,6 +28,7 @@ relay.md's PocketBase schema is not published in any open repo, so it was **reve
 - **`pb_migrations/1750000000_init_relay_control_plane.js`** — creates 12 collections: `roles` (seeded Owner/Member/Reader), `storage_quotas`, `providers`, `relays`, `shared_folders`, `relay_roles`, `shared_folder_roles`, `relay_invitations`, `subscriptions`, `devices`, `vaults`, `oauth2_response`, `code_exchange`. Each realtime-subscribed collection gets a non-null `listRule` so the plugin's `collection(...).subscribe("*")` SSE stream isn't admin-blocked.
 - **`pb_migrations/1750000001_users_add_picture.js`** — adds the `picture` text field the plugin reads off the OAuth user (`name`/`email` already exist on PB's default `users` auth collection).
 - **`pb_hooks/relay_self_host.pb.js`** — implements `POST /api/collections/relays/self-host` (the `Relay: Register self-hosted server` command): auth-gated, creates the provider + relay + Owner `relay_role` + `storage_quota`, returns the relay enriched with the expands the plugin's `store.ingest` expects.
+- **`pb_hooks/oauth2_code_exchange.pb.js`** — global middleware on `GET /api/oauth2-redirect` that persists a `code_exchange` row (`id = state.slice(0,15)`, `code = <auth code>`) so the plugin's **manual** OAuth code flow (`LoginManager.poll`) can read it back. Calls `next(c)` so PB's built-in handler still runs and the popup `authWithOAuth2`/SSE flow is untouched. Reconstructs relay.md's closed redirect handler.
 
 Both are mounted into the pocketbase container (`./pb_migrations`, `./pb_hooks`) and auto-applied on `serve`.
 
@@ -37,7 +38,7 @@ Both are mounted into the pocketbase container (`./pb_migrations`, `./pb_hooks`)
 
 - **No live smoke test yet.** Written + static-validated (JS `node --check`, schema shape vs. the plugin's field usage) but **not** applied against a running PocketBase — Docker was not started (machine-mutation policy). First boot may surface API drift (e.g. `new URL` availability in goja, exact `$apis` signatures); the hook is defensively wrapped where that's likely.
 - **Access rules are best-effort.** They scope visibility by membership via `relay_roles_via_relay` back-relations + creator, but were inferred, not copied from relay.md. Tighten/verify during the smoke test.
-- **`code_exchange` population is unsolved.** The plugin *reads* `code_exchange` (`getOne(state.slice(0,15))`) during the manual OAuth code flow, but the row is written server-side by relay.md's OAuth **redirect handler**, which is not reimplemented here. Standard `authWithOAuth2` (popup) login does not need it; the manual/mobile code flow will hang until a redirect hook is added.
+- **`code_exchange` population — RESOLVED.** The manual OAuth code flow row is now written by `pb_hooks/oauth2_code_exchange.pb.js` (redirect middleware), and `code_exchange.viewRule` is public so `LoginManager.poll`'s pre-auth `getOne` succeeds (the 15-char id is the high-entropy OAuth-state slice, so it doubles as the capability; `listRule` stays null to block enumeration). Both popup and manual flows should now work. Still untested live (needs Docker + OAuth provider creds).
 - **OAuth providers still need credentials** (Google/GitHub/Discord console) configured in the PB admin UI before any login.
 
 ## Getting started
