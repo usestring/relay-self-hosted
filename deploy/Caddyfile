@@ -1,0 +1,14 @@
+{$API_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy token-service:3000
+}
+
+{$AUTH_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy pocketbase:8090
+}
+
+{$RELAY_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy relay-server:8080
+}

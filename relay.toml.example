@@ -1,8 +1,9 @@
 # relay.toml — self-hosted Relay Server config (no relay.md dependency)
 #
-# Generate your own key: ./keygen.sh
-# Then: cp relay.toml.example relay.toml
-# and paste your generated key into the private_key field below.
+# Generate auth material with:
+#   docker compose run --rm relay-server /app/relay gen-auth --json --key-type legacy
+# Put the returned server_token in .env as RELAY_SERVER_AUTH, and put the
+# returned key_id/private_key in the [[auth]] block below.
 
 [server]
 url = "http://localhost:8080"
@@ -13,10 +14,11 @@ port = 8080
 level = "info"
 format = "pretty"
 
-# Your own signing key — 32 random bytes, base64url-encoded (no relay.md keys)
 [[auth]]
-key_id = "self-hosted-2026-06-25"
-private_key = "REPLACE_WITH_OUTPUT_OF_KEYGEN_SH"
+key_id = "REPLACE_WITH_GENERATED_KEY_ID"
+key_type = "legacy"
+private_key = "REPLACE_WITH_GENERATED_PRIVATE_KEY"
+allowed_token_types = ["document", "file", "server", "prefix"]
 
 [store]
 type = "filesystem"

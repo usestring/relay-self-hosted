@@ -1,24 +1,45 @@
 services:
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      - API_DOMAIN=${API_DOMAIN}
+      - AUTH_DOMAIN=${AUTH_DOMAIN}
+      - RELAY_DOMAIN=${RELAY_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      token-service:
+        condition: service_started
+      pocketbase:
+        condition: service_healthy
+      relay-server:
+        condition: service_started
+    restart: unless-stopped
+
   relay-server:
     image: docker.system3.md/relay-server
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     volumes:
-      - ./relay.toml:/app/relay.toml
+      - ./relay.toml:/app/relay.toml:ro
       - ./data:/app/data
     restart: unless-stopped
 
   token-service:
     image: node:22-alpine
     working_dir: /app
-    command: sh -c "npm install --silent && node src/index.js"
-    env_file:
-      - .env
-    ports:
-      - "3000:3000"
+    command: sh -c "npm ci --omit=dev --silent && node src/index.js"
+    expose:
+      - "3000"
     volumes:
       - ./token-service:/app
-      - ./relay.toml:/relay.toml
+      - ./relay.toml:/relay.toml:ro
     environment:
       - RELAY_TOML=/relay.toml
       - RELAY_URL=http://relay-server:8080
@@ -33,25 +54,25 @@ services:
     restart: unless-stopped
 
   pocketbase:
-    # Pinned: the control-plane migrations + self-host hook target the
-    # PocketBase v0.22.x JS API (Dao/Collection/SchemaField, $app.dao()).
-    # v0.23+ rewrote that API, so do not float to :latest without porting
-    # pb_migrations/ and pb_hooks/ first.
     image: ghcr.io/muchobien/pocketbase:0.22.21
     entrypoint: ["/bin/sh", "-c"]
     command: >
       "pocketbase migrate up --dir /pb/pb_data --migrationsDir /pb/pb_migrations &&
       pocketbase serve --http=0.0.0.0:8090 --dir /pb/pb_data
       --migrationsDir /pb/pb_migrations --hooksDir /pb/pb_hooks"
-    ports:
-      - "8090:8090"
+    expose:
+      - "8090"
     volumes:
       - ./pb_data:/pb/pb_data
-      - ./pb_migrations:/pb/pb_migrations
-      - ./pb_hooks:/pb/pb_hooks
+      - ./pb_migrations:/pb/pb_migrations:ro
+      - ./pb_hooks:/pb/pb_hooks:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8090/api/health"]
       interval: 10s
       timeout: 5s
       retries: 3
+
+volumes:
+  caddy_data:
+  caddy_config:

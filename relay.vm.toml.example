@@ -1,0 +1,23 @@
+# relay.toml for a single-VM deployment.
+#
+# Copy this to relay.toml, replace the public URL and auth material, then run:
+#   docker compose -f docker-compose.vm.yml up -d
+
+[server]
+url = "https://relay.example.com"
+host = "0.0.0.0"
+port = 8080
+
+[logging]
+level = "info"
+format = "pretty"
+
+[[auth]]
+key_id = "REPLACE_WITH_GENERATED_KEY_ID"
+key_type = "legacy"
+private_key = "REPLACE_WITH_GENERATED_PRIVATE_KEY"
+allowed_token_types = ["document", "file", "server", "prefix"]
+
+[store]
+type = "filesystem"
+path = "/app/data"

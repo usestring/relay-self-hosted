@@ -1,8 +1,10 @@
 # Live signing key — generate your own with keygen.sh
+.env
 relay.toml
 
 # Runtime data
 data/
+pb_data/
 
 # Plugin clone — apply patches/relay-plugin.patch to your own clone instead
 relay-plugin/
