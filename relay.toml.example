@@ -1,12 +1,9 @@
 # relay.toml — self-hosted Relay Server config (no relay.md dependency)
 #
-# Generate server auth material with:
-#   docker compose run --rm relay-server /app/relay gen-auth --json --key-type EdDSA
-# Put the returned auth_token in .env as RELAY_SERVER_AUTH, and put the
-# returned public_key in the first [[auth]] block below.
-#
-# Then generate a legacy HMAC key with ./keygen.sh and put it in the second
-# [[auth]] block. relay-server uses that key to sign returned doc/file tokens.
+# Generate auth material with:
+#   docker compose run --rm relay-server /app/relay gen-auth --json --key-type legacy
+# Put the returned server_token in .env as RELAY_SERVER_AUTH, and put the
+# returned key_id/private_key in the [[auth]] block below.
 
 [server]
 url = "http://localhost:8080"
@@ -18,15 +15,9 @@ level = "info"
 format = "pretty"
 
 [[auth]]
-key_id = "self_hosted"
-key_type = "EdDSA"
-public_key = "REPLACE_WITH_EDDSA_PUBLIC_KEY"
-allowed_token_types = ["document", "file", "server", "prefix"]
-
-[[auth]]
-key_id = "self_hosted_legacy"
-key_type = "hmac-sha256"
-private_key = "REPLACE_WITH_OUTPUT_OF_KEYGEN_SH"
+key_id = "REPLACE_WITH_GENERATED_KEY_ID"
+key_type = "legacy"
+private_key = "REPLACE_WITH_GENERATED_PRIVATE_KEY"
 allowed_token_types = ["document", "file", "server", "prefix"]
 
 [store]

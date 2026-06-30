@@ -46,22 +46,15 @@ url = "https://relay.example.com"
 
 ## Generate relay auth material
 
-Generate the EdDSA server auth pair:
+Generate one legacy auth set:
 
 ```bash
-docker compose -f docker-compose.vm.yml run --rm relay-server /app/relay gen-auth --json --key-type EdDSA
+docker compose -f docker-compose.vm.yml run --rm relay-server /app/relay gen-auth --json --key-type legacy
 ```
 
-Put the returned `auth_token` in `.env` as `RELAY_SERVER_AUTH`. Put the returned
-`public_key` in the first `[[auth]]` block in `relay.toml`.
-
-Generate the legacy HMAC signing key:
-
-```bash
-./keygen.sh
-```
-
-Put the printed `private_key` in the second `[[auth]]` block in `relay.toml`.
+Put the returned `server_token` in `.env` as `RELAY_SERVER_AUTH`. Put the
+returned `key_id` and `private_key` in the single `[[auth]]` block in
+`relay.toml`, and keep `key_type = "legacy"`.
 
 ## Start
 

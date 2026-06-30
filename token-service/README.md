@@ -1,6 +1,6 @@
 # Token Service
 
-Bridges PocketBase auth to relay-server's management API and returns doc/file CWTs for the Obsidian Relay plugin.
+Bridges PocketBase auth to relay-server's management API and returns doc/file tokens for the Obsidian Relay plugin.
 
 ## Run locally
 
@@ -19,7 +19,7 @@ Reads `../relay.toml` by default (override with `RELAY_TOML=/path/to/relay.toml`
 |-----|---------|-------------|
 | `PORT` | `3000` | Listen port |
 | `RELAY_URL` | from relay.toml | relay-server URL |
-| `RELAY_SERVER_AUTH` | required | Server-scoped CWT accepted by relay-server's `/doc/:id/auth` |
+| `RELAY_SERVER_AUTH` | required | Server-scoped token accepted by relay-server's `/doc/:id/auth` |
 | `RELAY_TOML` | `../../relay.toml` | Path to relay.toml (for relay URL discovery) |
 | `POCKETBASE_URL` | `http://localhost:8090` | PocketBase instance URL |
 

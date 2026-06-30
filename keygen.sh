@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
-# Generate the legacy signing key relay-server needs for /doc/:id/auth.
 set -euo pipefail
 
-KEY=$(openssl rand -base64 30 | tr '+/' '-_' | tr -d '=')
-KEY_ID="self_hosted_legacy"
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
+AUTH_JSON=$(docker compose -f "$COMPOSE_FILE" run --rm relay-server /app/relay gen-auth --json --key-type legacy)
 
-echo "New key (add to relay.toml [[auth]] block):"
+KEY_ID=$(printf '%s\n' "$AUTH_JSON" | sed -n 's/.*"key_id": "\(.*\)".*/\1/p')
+PRIVATE_KEY=$(printf '%s\n' "$AUTH_JSON" | sed -n 's/.*"private_key": "\(.*\)".*/\1/p')
+SERVER_TOKEN=$(printf '%s\n' "$AUTH_JSON" | sed -n 's/.*"server_token": "\(.*\)".*/\1/p')
+
+echo "Add to .env:"
+echo "RELAY_SERVER_AUTH=$SERVER_TOKEN"
 echo ""
+echo "Add to relay.toml:"
 echo "[[auth]]"
 echo "key_id = \"$KEY_ID\""
-echo "key_type = \"hmac-sha256\""
-echo "private_key = \"$KEY\""
+echo "key_type = \"legacy\""
+echo "private_key = \"$PRIVATE_KEY\""
 echo "allowed_token_types = [\"document\", \"file\", \"server\", \"prefix\"]"
 echo ""
-echo "Keep this value secret — anyone with it can forge document tokens."
+echo "Keep both values secret."

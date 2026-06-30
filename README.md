@@ -95,20 +95,17 @@ In the Relay plugin sidebar, log in via PocketBase OAuth. Create a multiplayer f
 
 ## Key management
 
-Relay-server needs two local auth materials:
+Relay-server needs one local legacy auth set. The generated `server_token`
+goes in `.env` as `RELAY_SERVER_AUTH`; the generated `key_id` and
+`private_key` go in the single `[[auth]]` block in `relay.toml`.
 
-1. An EdDSA server-auth keypair: put the public key in `relay.toml`, and put the matching server CWT in `.env` as `RELAY_SERVER_AUTH`.
-2. A legacy 30-byte signing key: keep this as a second `[[auth]]` block so `/doc/:id/auth` can sign returned doc/file tokens.
+The block must include `allowed_token_types = ["document", "file", "server", "prefix"]`.
 
-Both blocks must include `allowed_token_types = ["document", "file", "server", "prefix"]`.
-
-To rotate the legacy signing key:
+To rotate auth material:
 ```bash
-./keygen.sh   # prints a new [[auth]] block to paste into relay.toml
+./keygen.sh   # prints RELAY_SERVER_AUTH plus the matching [[auth]] block
 docker compose restart relay-server token-service
 ```
-
-To rotate the server-auth keypair, run relay-server's `gen-auth --json --key-type EdDSA`, update `relay.toml` with the new public key, update `.env` with the new `RELAY_SERVER_AUTH`, then recreate the stack.
 
 ## Rebuilding the plugin
 
@@ -127,10 +124,10 @@ Obsidian plugin
   → POST /token to token-service (with PocketBase session JWT)
   → token-service validates JWT with PocketBase auth-refresh
   → token-service calls relay-server management API (POST /doc/:id/auth) with RELAY_SERVER_AUTH
-  → relay-server issues a doc-scoped CWT signed with private_key
+  → relay-server issues a doc-scoped token signed with private_key
   → token-service returns ClientToken to plugin
-  → plugin opens WebSocket to relay-server with that CWT
-  → relay-server validates CWT and opens the doc session
+  → plugin opens WebSocket to relay-server with that token
+  → relay-server validates the token and opens the doc session
 ```
 
 ## Token microservice contract
@@ -157,7 +154,7 @@ Expected response (`ClientToken`):
   "baseUrl": "http://localhost:8080",
   "docId": "<document-uuid>",
   "folder": "<folder-id>",
-  "token": "<doc/file CWT returned by relay-server>",
+  "token": "<doc/file token returned by relay-server>",
   "authorization": "full",
   "expiryTime": 1234567890000
 }

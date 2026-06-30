@@ -13,15 +13,9 @@ level = "info"
 format = "pretty"
 
 [[auth]]
-key_id = "self_hosted"
-key_type = "EdDSA"
-public_key = "REPLACE_WITH_EDDSA_PUBLIC_KEY"
-allowed_token_types = ["document", "file", "server", "prefix"]
-
-[[auth]]
-key_id = "self_hosted_legacy"
-key_type = "hmac-sha256"
-private_key = "REPLACE_WITH_OUTPUT_OF_KEYGEN_SH"
+key_id = "REPLACE_WITH_GENERATED_KEY_ID"
+key_type = "legacy"
+private_key = "REPLACE_WITH_GENERATED_PRIVATE_KEY"
 allowed_token_types = ["document", "file", "server", "prefix"]
 
 [store]
