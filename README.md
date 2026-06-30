@@ -175,10 +175,16 @@ The plugin also calls `POST ${API_URL}/file-token` (see `relay-plugin/src/LiveTo
 - [ ] Rotate auth/signing material and store secrets in a secret manager (not in plaintext local files)
 - [ ] Enable PocketBase OAuth providers in the admin UI
 
+For the cheap one-box deployment path, use `docker-compose.vm.yml` and follow
+`docs/single-vm.md`. It runs Caddy, relay-server, token-service, and PocketBase
+on one VM and only exposes ports 80/443.
+
 ## Files
 
 - `relay.toml` — relay-server config (our key, filesystem storage)
 - `docker-compose.yml` — full stack (relay-server, token-service, pocketbase)
+- `docker-compose.vm.yml` — single-VM stack with Caddy TLS reverse proxy
+- `deploy/Caddyfile` — routes API/auth/relay hostnames to internal services
 - `keygen.sh` — generates a new signing key
 - `pb_migrations/` — PocketBase control-plane schema (auto-applied on serve)
 - `pb_hooks/` — PocketBase custom routes (`self-host`, invitation, key rotation, relay config, OAuth code exchange)
