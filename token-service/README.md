@@ -1,6 +1,6 @@
 # Token Service
 
-Issues doc-scoped CWTs for the Obsidian Relay plugin, bridging PocketBase auth and relay-server's management API.
+Bridges PocketBase auth to relay-server's management API and returns doc/file CWTs for the Obsidian Relay plugin.
 
 ## Run locally
 
@@ -19,7 +19,8 @@ Reads `../relay.toml` by default (override with `RELAY_TOML=/path/to/relay.toml`
 |-----|---------|-------------|
 | `PORT` | `3000` | Listen port |
 | `RELAY_URL` | from relay.toml | relay-server URL |
-| `RELAY_TOML` | `../../relay.toml` | Path to relay.toml (for private key + key ID) |
+| `RELAY_SERVER_AUTH` | required | Server-scoped CWT accepted by relay-server's `/doc/:id/auth` |
+| `RELAY_TOML` | `../../relay.toml` | Path to relay.toml (for relay URL discovery) |
 | `POCKETBASE_URL` | `http://localhost:8090` | PocketBase instance URL |
 
 ## Endpoints
@@ -36,16 +37,30 @@ Content-Type: application/json
 ```
 Returns a ClientToken the plugin sends to relay-server's WebSocket.
 
+### `POST /file-token`
+```
+Authorization: Bearer <pocketbase-session-jwt>
+Content-Type: application/json
+
+{
+  "docId": "...",
+  "relay": "...",
+  "folder": "...",
+  "hash": "...",
+  "contentType": "image/png",
+  "contentLength": 1234
+}
+```
+Returns a FileToken: a ClientToken plus `fileHash`.
+
 ## How it works
 
-1. Verifies the PocketBase Bearer JWT (**currently stubbed** — accepts any non-empty token; wire up real PocketBase validation once PocketBase is running)
-2. Generates a server-scoped CWT (COSE_Mac0, HMAC-SHA256/64) signed with the private key from `relay.toml`
-3. Calls `POST /doc/:docId/auth` on relay-server with that server token
+1. Verifies the PocketBase Bearer JWT via `${POCKETBASE_URL}/api/collections/users/auth-refresh`
+2. Sends `RELAY_SERVER_AUTH` to `POST /doc/:docId/auth` on relay-server
+3. Creates the doc first and retries when relay-server returns `404`
 4. Returns the resulting ClientToken with `folder` + `expiryTime` added (fields the plugin expects beyond the relay-server shape)
 
 ## TODO before production
 
-- [ ] Replace the PocketBase token stub with a real validation call to `${POCKETBASE_URL}/api/collections/users/auth-refresh`
 - [ ] Run PocketBase and wire up OAuth login (Google/GitHub/Discord)
-- [ ] Serve the PocketBase login proxy on `AUTH_URL` so the plugin's login flow works end-to-end
 - [ ] Add CORS headers scoped to the Obsidian origin if needed

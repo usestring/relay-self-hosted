@@ -7,7 +7,6 @@
     "dev": "node --watch src/index.js"
   },
   "dependencies": {
-    "cbor2": "^1.2.1",
     "express": "^4.19.2"
   }
 }

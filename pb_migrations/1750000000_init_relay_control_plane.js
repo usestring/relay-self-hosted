@@ -85,6 +85,12 @@ migrate(
 		};
 
 		const AUTHED = '@request.auth.id != ""';
+		const RELAY_MEMBER = 'relay.relay_roles_via_relay.user ?= @request.auth.id';
+		const RELAY_MEMBER_OR_CREATOR = `relay.creator = @request.auth.id || ${RELAY_MEMBER}`;
+		const FOLDER_MEMBER = 'shared_folder_roles_via_shared_folder.user ?= @request.auth.id';
+		const FOLDER_RELAY_MEMBER = 'relay.relay_roles_via_relay.user ?= @request.auth.id';
+		const FOLDER_VISIBLE = `creator = @request.auth.id || ${FOLDER_MEMBER} || (private = false && ${FOLDER_RELAY_MEMBER})`;
+		const FOLDER_MANAGER = 'creator = @request.auth.id || relay.creator = @request.auth.id';
 
 		// --- leaf collections (no relations) -------------------------------
 		make("roles0000000000", "roles", [TEXT("name", true)], {
@@ -140,7 +146,7 @@ migrate(
 				// Visible to any member of the relay (via relay_roles back-relation)
 				// or its creator. relay_roles_via_relay is PB's auto back-relation.
 				list: 'creator = @request.auth.id || relay_roles_via_relay.user ?= @request.auth.id',
-				create: AUTHED,
+				create: 'creator = @request.auth.id',
 				update: 'creator = @request.auth.id',
 				delete: 'creator = @request.auth.id',
 				indexes: [
@@ -161,10 +167,10 @@ migrate(
 				BOOL("private"),
 			],
 			{
-				list: 'creator = @request.auth.id || relay.relay_roles_via_relay.user ?= @request.auth.id',
-				create: AUTHED,
-				update: AUTHED,
-				delete: AUTHED,
+				list: FOLDER_VISIBLE,
+				create: `creator = @request.auth.id && ${FOLDER_RELAY_MEMBER}`,
+				update: FOLDER_MANAGER,
+				delete: FOLDER_MANAGER,
 				indexes: [
 					"CREATE UNIQUE INDEX idx_shared_folders_guid ON shared_folders (guid)",
 				],
@@ -181,8 +187,8 @@ migrate(
 				REL("relay", "relays", { cascadeDelete: true }),
 			],
 			{
-				list: 'user = @request.auth.id || relay.creator = @request.auth.id',
-				create: AUTHED,
+				list: `user = @request.auth.id || ${RELAY_MEMBER_OR_CREATOR}`,
+				create: 'relay.creator = @request.auth.id',
 				update: 'relay.creator = @request.auth.id',
 				delete: 'relay.creator = @request.auth.id || user = @request.auth.id',
 			},
@@ -198,10 +204,10 @@ migrate(
 				REL("shared_folder", "shared_folders", { cascadeDelete: true }),
 			],
 			{
-				list: 'user = @request.auth.id || shared_folder.creator = @request.auth.id',
-				create: AUTHED,
-				update: AUTHED,
-				delete: AUTHED,
+				list: `user = @request.auth.id || shared_folder.creator = @request.auth.id || shared_folder.relay.creator = @request.auth.id`,
+				create: 'shared_folder.creator = @request.auth.id || shared_folder.relay.creator = @request.auth.id',
+				update: 'shared_folder.creator = @request.auth.id || shared_folder.relay.creator = @request.auth.id',
+				delete: 'shared_folder.creator = @request.auth.id || shared_folder.relay.creator = @request.auth.id || user = @request.auth.id',
 			},
 		);
 
@@ -216,8 +222,8 @@ migrate(
 				BOOL("enabled"),
 			],
 			{
-				list: 'relay.creator = @request.auth.id || relay.relay_roles_via_relay.user ?= @request.auth.id',
-				create: AUTHED,
+				list: RELAY_MEMBER_OR_CREATOR,
+				create: 'relay.creator = @request.auth.id',
 				update: 'relay.creator = @request.auth.id',
 				delete: 'relay.creator = @request.auth.id',
 			},
@@ -238,10 +244,7 @@ migrate(
 				TEXT("token"),
 			],
 			{
-				list: 'user = @request.auth.id || relay.creator = @request.auth.id',
-				create: AUTHED,
-				update: AUTHED,
-				delete: AUTHED,
+				list: `user = @request.auth.id || ${RELAY_MEMBER_OR_CREATOR}`,
 			},
 		);
 
@@ -253,7 +256,7 @@ migrate(
 			[TEXT("name"), TEXT("platform"), REL("user", "users")],
 			{
 				list: 'user = @request.auth.id',
-				create: AUTHED,
+				create: 'user = @request.auth.id',
 				update: 'user = @request.auth.id',
 				delete: 'user = @request.auth.id',
 			},
@@ -267,7 +270,7 @@ migrate(
 			[REL("device", "devices"), REL("user", "users")],
 			{
 				list: 'user = @request.auth.id',
-				create: AUTHED,
+				create: 'user = @request.auth.id && device.user = @request.auth.id',
 				update: 'user = @request.auth.id',
 				delete: 'user = @request.auth.id',
 			},

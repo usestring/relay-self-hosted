@@ -39,12 +39,15 @@ routerAdd(
 
 		const dao = $app.dao();
 
-		// uuid v4 (lowercase hex) — the relay guid becomes the y-doc namespace.
 		const hex = (n) =>
 			$security.randomStringWithAlphabet(n, "0123456789abcdef");
 		const guid = `${hex(8)}-${hex(4)}-4${hex(3)}-${"89ab"[
 			Math.floor(Math.random() * 4)
 		]}${hex(3)}-${hex(12)}`;
+		const shareKey = $security.randomStringWithAlphabet(
+			32,
+			"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+		);
 
 		// --- resolve / create the provider --------------------------------
 		let provider;
@@ -94,12 +97,18 @@ routerAdd(
 		const rolesCol = dao.findCollectionByNameOrId("relay_roles");
 		const relayRole = new Record(rolesCol);
 		relayRole.set("user", user.id);
-		relayRole.set("role", "roleowner000000"); // seeded Owner role id
+		relayRole.set("role", "roleowner000000");
 		relayRole.set("relay", relay.id);
 		dao.saveRecord(relayRole);
 
-		// Enrich so the plugin's store.ingest sees the membership + quota it
-		// expects right after creation (matches createRelay's expand string).
+		const invitationsCol = dao.findCollectionByNameOrId("relay_invitations");
+		const invitation = new Record(invitationsCol);
+		invitation.set("relay", relay.id);
+		invitation.set("role", "rolemember00000");
+		invitation.set("key", shareKey);
+		invitation.set("enabled", true);
+		dao.saveRecord(invitation);
+
 		$apis.enrichRecord(
 			c,
 			dao,

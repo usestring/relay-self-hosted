@@ -7,16 +7,13 @@ services:
       - ./relay.toml:/app/relay.toml
       - ./data:/app/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/ready"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   token-service:
     image: node:22-alpine
     working_dir: /app
     command: sh -c "npm install --silent && node src/index.js"
+    env_file:
+      - .env
     ports:
       - "3000:3000"
     volumes:
@@ -25,11 +22,12 @@ services:
     environment:
       - RELAY_TOML=/relay.toml
       - RELAY_URL=http://relay-server:8080
+      - RELAY_SERVER_AUTH=${RELAY_SERVER_AUTH:-}
       - POCKETBASE_URL=http://pocketbase:8090
       - PORT=3000
     depends_on:
       relay-server:
-        condition: service_healthy
+        condition: service_started
       pocketbase:
         condition: service_healthy
     restart: unless-stopped
@@ -40,6 +38,11 @@ services:
     # v0.23+ rewrote that API, so do not float to :latest without porting
     # pb_migrations/ and pb_hooks/ first.
     image: ghcr.io/muchobien/pocketbase:0.22.21
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "pocketbase migrate up --dir /pb/pb_data --migrationsDir /pb/pb_migrations &&
+      pocketbase serve --http=0.0.0.0:8090 --dir /pb/pb_data
+      --migrationsDir /pb/pb_migrations --hooksDir /pb/pb_hooks"
     ports:
       - "8090:8090"
     volumes:
