@@ -38,8 +38,7 @@ services:
     expose:
       - "3000"
     volumes:
-      - ./token-service:/app:ro
-      - token_service_node_modules:/app/node_modules
+      - ./token-service:/app
       - ./relay.toml:/relay.toml:ro
     environment:
       - RELAY_TOML=/relay.toml
@@ -77,4 +76,3 @@ services:
 volumes:
   caddy_data:
   caddy_config:
-  token_service_node_modules:
