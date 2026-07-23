@@ -4,10 +4,14 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "prepare": "cd .. && husky token-service/.husky"
   },
   "dependencies": {
     "cbor2": "^1.2.1",
     "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
   }
 }
